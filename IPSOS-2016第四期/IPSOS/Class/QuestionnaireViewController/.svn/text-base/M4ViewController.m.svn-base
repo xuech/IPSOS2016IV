@@ -1,0 +1,71 @@
+//
+//  M2ViewController.m
+//  IPSOS
+//
+//  Created by 沈鹏 on 14-8-11.
+//  Copyright (c) 2014年 沈鹏. All rights reserved.
+//
+
+#import "M4ViewController.h"
+
+@interface M4ViewController ()<UITextFieldDelegate>
+
+@property (weak, nonatomic) IBOutlet UIView *otherView;
+@property (weak, nonatomic) IBOutlet UIImageView *img1;
+@property (weak, nonatomic) IBOutlet UIImageView *img2;
+@property (weak, nonatomic) IBOutlet UITextField *nameTextField;
+@property (weak, nonatomic) IBOutlet UITextField *phoneTextFied;
+
+@end
+
+@implementation M4ViewController
+
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    _nameTextField.delegate = self;
+    _phoneTextFied.delegate = self;
+    [self.otherView setHidden:true];
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (IBAction)buttonEvent:(id)sender {
+    BOOL temp = NO;
+    [_img1 setImage:IMAGENAMED(@"icon-checkbox")];
+    [_img2 setImage:IMAGENAMED(@"icon-checkbox")];
+    switch ([sender tag]) {
+        case 1:
+            [_img1 setImage:IMAGENAMED(@"icon-checkboxselected")];
+            [self.otherView setHidden:true];
+            temp = true;
+            break;
+        case 2:
+            [_img2 setImage:IMAGENAMED(@"icon-checkboxselected")];
+            [self.otherView setHidden:false];
+            
+            temp = false;
+            break;
+            
+        default:
+            break;
+    }
+    
+    [self.delegate m4Event:temp];
+    
+}
+
+
+-(BOOL)textFieldShouldEndEditing:(UITextField *)textField
+{
+    NSDictionary *dic = @{@"Name":_nameTextField.text,@"Phone":_phoneTextFied.text};
+    [self.delegate m4Dic:dic];
+    return true;
+}
+
+@end

@@ -1,0 +1,9 @@
+K 10
+svn:ignore
+V 47
+Pods
+IPSOS.xcworkspace
+Podfile.lock
+IPSOSTests
+
+END

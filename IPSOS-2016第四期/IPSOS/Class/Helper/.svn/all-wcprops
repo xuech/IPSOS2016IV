@@ -1,0 +1,119 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/IPSOS/!svn/ver/211/trunk/source/ios/IPSOS/IPSOS/Class/Helper
+END
+Context.m
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/IPSOS/!svn/ver/75/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Context.m
+END
+QuestionsData.m
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/IPSOS/!svn/ver/46/trunk/source/ios/IPSOS/IPSOS/Class/Helper/QuestionsData.m
+END
+StoreData.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/IPSOS/!svn/ver/211/trunk/source/ios/IPSOS/IPSOS/Class/Helper/StoreData.m
+END
+ShopTaskTableViewCell.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/IPSOS/!svn/ver/284/trunk/source/ios/IPSOS/IPSOS/Class/Helper/ShopTaskTableViewCell.h
+END
+Reachability.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/IPSOS/!svn/ver/31/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Reachability.h
+END
+CommonDefine.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/IPSOS/!svn/ver/17/trunk/source/ios/IPSOS/IPSOS/Class/Helper/CommonDefine.h
+END
+ShopTaskTableViewCell.m
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/IPSOS/!svn/ver/284/trunk/source/ios/IPSOS/IPSOS/Class/Helper/ShopTaskTableViewCell.m
+END
+DataManager.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/IPSOS/!svn/ver/56/trunk/source/ios/IPSOS/IPSOS/Class/Helper/DataManager.h
+END
+Reachability.m
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/IPSOS/!svn/ver/31/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Reachability.m
+END
+CustomAnnotation.h
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/IPSOS/!svn/ver/25/trunk/source/ios/IPSOS/IPSOS/Class/Helper/CustomAnnotation.h
+END
+QuestionsData2.h
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/IPSOS/!svn/ver/56/trunk/source/ios/IPSOS/IPSOS/Class/Helper/QuestionsData2.h
+END
+DataManager.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/IPSOS/!svn/ver/56/trunk/source/ios/IPSOS/IPSOS/Class/Helper/DataManager.m
+END
+CustomAnnotation.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/IPSOS/!svn/ver/25/trunk/source/ios/IPSOS/IPSOS/Class/Helper/CustomAnnotation.m
+END
+QuestionsData2.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/IPSOS/!svn/ver/56/trunk/source/ios/IPSOS/IPSOS/Class/Helper/QuestionsData2.m
+END
+Constants.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/IPSOS/!svn/ver/211/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Constants.h
+END
+QuestionsData.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/IPSOS/!svn/ver/46/trunk/source/ios/IPSOS/IPSOS/Class/Helper/QuestionsData.h
+END
+Context.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/IPSOS/!svn/ver/75/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Context.h
+END
+StoreData.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/IPSOS/!svn/ver/75/trunk/source/ios/IPSOS/IPSOS/Class/Helper/StoreData.h
+END
+Foundation+Log.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/IPSOS/!svn/ver/289/trunk/source/ios/IPSOS/IPSOS/Class/Helper/Foundation+Log.m
+END

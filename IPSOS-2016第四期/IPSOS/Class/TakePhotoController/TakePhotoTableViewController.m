@@ -1,0 +1,427 @@
+//
+//  TakePhotoTableViewController.m
+//  IPSOS
+//
+//  Created by 沈鹏 on 14-8-21.
+//  Copyright (c) 2014年 沈鹏. All rights reserved.
+//
+
+#import "TakePhotoTableViewController.h"
+#import "ProductsDetailsCollectionViewController.h"
+
+@interface TakePhotoTableViewController ()<UIImagePickerControllerDelegate,UINavigationControllerDelegate,UIActionSheetDelegate,ProductsDetailsCollectionViewControllerDelegate>
+{
+
+    NSInteger selectedPicNum;
+    NSInteger selectedCVNum;
+    StoreData *storeData;
+    
+    NSMutableArray *dataSource;
+    NSMutableArray *pDCVs;
+    NSMutableArray *photosData;
+    NSMutableArray *photosName;
+    
+    QuestionsData *questionData;
+}
+
+@end
+
+@implementation TakePhotoTableViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"拍照";
+    // 禁用 iOS7 返回手势
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+    }
+    
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+    
+    storeData = [[DataManager shareDataManager] storeData];
+    questionData = [[QuestionsData alloc] initWithPlistPath:storeData.plistPath];
+    dataSource = [NSMutableArray new];
+    pDCVs = [NSMutableArray new];
+    photosData = [NSMutableArray new];
+    
+    NSMutableDictionary *plistData = PLISTDATA(storeData.plistPath);
+    NSMutableArray *taskData2 = [plistData valueForKey:@"taskData2"];
+    
+    [dataSource addObject:@"请上传店内患者教育折页陈列POP的照片"];
+    [dataSource addObject:@"请上传店内患者教育书籍陈列POP的照片"];
+    [dataSource addObject:@"请上传店内糖尿病健康服务站-柜台陈列架的照片"];
+    [dataSource addObject:@"请上传店内糖尿病健康服务站-患教书籍的照片"];
+    [dataSource addObject:@"请上传店内糖尿病健康服务站-灯箱/KT版/吊牌的照片"];
+
+    
+//    [dataSource addObject:@"请上传店内糖尿病健康服务站的照片"];
+    
+//    [dataSource addObject:@"抗生素类产品照片"];
+//    [dataSource addObject:@"糖尿病类产品照片"];
+//    [dataSource addObject:@"抗抑郁类产品照片"];
+//    [dataSource addObject:@"糖尿病健康服务站相关POP照片"];
+//    [dataSource addObject:@"抗生素 POP陈列"];
+//    for (int i = 0; i<questionData.data.count; i++) {
+//        NSDictionary *dic = [questionData.data objectAtIndex:i];
+//        if (i<=8) {
+//            if ([[dic valueForKey:@"isHave"] boolValue]) {
+//                [dataSource addObject:@"ED 产品照片"];
+//                break;
+//            }
+//        }
+//    }
+    //去掉名字
+//    for (int i = 0; i<taskData2.count; i++) {
+//        if (i<=1) {
+//            NSArray *result = [[[[taskData2 objectAtIndex:i] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//            if (result.count > 0) {
+//                if (![[result objectAtIndex:0] isEqualToString:@"以上皆无"]) {
+//                    [dataSource addObject:[[taskData2 objectAtIndex:i] valueForKey:@"productName"]];
+////                    break;
+//                }
+//            }
+//        }
+//    }
+//
+//    for (int i = 0; i<questionData.data.count; i++) {
+//        NSDictionary *dic = [questionData.data objectAtIndex:i];
+//        if (i>8) {
+//            if ([[dic valueForKey:@"isHave"] boolValue]) {
+//                [dataSource addObject:@"抗生素 产品照片"];
+//                break;
+//            }
+//        }
+//    }
+//    
+//    for (int i = 0; i<taskData2.count; i++) {
+//        if (i>3) {
+//            NSArray *result = [[[[taskData2 objectAtIndex:i] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//            if (result.count > 0) {
+//                if (![[result objectAtIndex:0] isEqualToString:@"以上暂无"]) {
+//                    [dataSource addObject:@"抗生素 POP陈列"];
+//                    break;
+//                }
+//            }
+//        }
+//    }
+
+//    NSDictionary *dic = [questionData.data objectAtIndex:9];
+//    if ([[dic valueForKey:@"isHave"] boolValue]) {
+//        [dataSource addObject:@"希刻劳产品照片"];
+//    }
+//    NSArray *result = [[[[taskData2 objectAtIndex:4] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//    if (result.count > 0) {
+//        if (![[result objectAtIndex:0] isEqualToString:@"以上暂无"]) {
+//            [dataSource addObject:@"希刻劳POP陈列"];
+//        }
+//    }
+
+    
+    NSMutableArray *checkPhoto = [[NSMutableDictionary dictionaryWithContentsOfFile:storeData.plistPath] objectForKey:@"checkPhotos"];
+
+    for (NSDictionary *dic in checkPhoto) {
+        NSMutableArray *temp = [NSMutableArray new];
+        NSString *name = [dic valueForKey:@"name"];
+        NSArray *arr = [dic valueForKey:@"res"];
+        
+        if([name isEqualToString:@"报错"]){
+            continue;
+        }
+        
+        for (NSString *imageName in arr) {
+            NSString *path = [[storeData.storeIdPath stringByAppendingPathComponent:@"Photos"] stringByAppendingPathComponent:imageName];
+            NSData *imgData = [NSData dataWithContentsOfFile:path];
+            [temp addObject:imgData];
+        }
+        [photosData addObject:temp];
+    }
+
+
+    
+    if (photosData.count<=0) {
+        for (NSObject *object in dataSource) {
+            [photosData addObject:[NSMutableArray new]];
+        }
+    }
+    
+    for (int i = 0; i<dataSource.count; i++) {
+        ProductsDetailsCollectionViewController *p =[ProductsDetailsCollectionViewController new];
+        p.delegate = self;
+        p.num = i;
+        p.photoData = [photosData objectAtIndex:i];
+        [pDCVs addObject:p];
+    }
+//    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStyleDone target:nil action:nil];
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = YES;
+    }
+    
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSString *imagePath= [storeData.storeIdPath stringByAppendingPathComponent:@"Photos"];
+
+        NSError *error;
+        [fileManager createDirectoryAtPath:imagePath withIntermediateDirectories:YES attributes:nil error:&error];
+
+        if (error) {
+            [ZAActivityBar showErrorWithStatus:@"数据文件夹创建失败"];
+            return;
+        }
+        //删除产品目录下的所有jpeg文件
+//        NSString *extension = @"jpeg";
+//        NSArray *contents = [fileManager contentsOfDirectoryAtPath:imagePath error:NULL];
+//        NSEnumerator *e = [contents objectEnumerator];
+//        NSString *filename;
+//        while ((filename = [e nextObject])) {
+//            if ([[filename pathExtension] isEqualToString:extension]) {
+//                [fileManager removeItemAtPath:[imagePath stringByAppendingPathComponent:filename] error:NULL];
+//            }
+//        }
+    NSMutableArray *checkPhotos = [[NSMutableDictionary dictionaryWithContentsOfFile:storeData.plistPath] objectForKey:@"checkPhotos"];
+    NSDictionary *errorPhoto;
+    for (NSDictionary *dic in checkPhotos) {
+        NSArray *arr = [dic valueForKey:@"res"];
+        NSString *name = [dic valueForKey:@"name"];
+        if([name isEqualToString:@"报错"]){
+            errorPhoto = dic;
+            continue;
+        }
+        for (NSString *imageName in arr) {
+            NSString *path = [imagePath stringByAppendingPathComponent:imageName];
+            [fileManager removeItemAtPath:path error:NULL];
+        }
+    }
+    
+        //将collectionView中的image存到本地
+    int i = 0,j=0;
+    photosName = [NSMutableArray new];
+    for (NSMutableArray *res in photosData) {
+        [photosName addObject:[NSMutableArray new]];
+        for (NSData *imgData in res) {
+            NSString *imageName = [NSString stringWithFormat:@"take-%d-%d.jpeg",i,j];
+            if([imgData writeToFile:[imagePath stringByAppendingPathComponent:imageName] options:NSDataWritingAtomic error:nil])
+            {
+                [[photosName objectAtIndex:i] addObject:imageName];
+                j++;
+            }
+        }
+        i++;
+        j=0;
+    }
+    
+    checkPhotos = [NSMutableArray new];
+    NSMutableDictionary *dicData;
+    for (int i = 0; i<dataSource.count; i++) {
+        dicData = [NSMutableDictionary new];
+        NSString *name = [dataSource objectAtIndex:i];
+        [dicData setValue:name forKey:@"name"];
+        [dicData setObject:[photosName objectAtIndex:i] forKey:@"res"];
+        [checkPhotos addObject:dicData];
+    }
+    
+    if (errorPhoto != nil) {
+        [checkPhotos addObject:errorPhoto];
+    }
+    
+    
+    NSMutableDictionary *plistData = [NSMutableDictionary dictionaryWithContentsOfFile:storeData.plistPath];
+    [plistData setObject:checkPhotos forKey:@"checkPhotos"];
+    if(!WRITE_PLISTDATA(plistData, storeData.plistPath)){
+        [ZAActivityBar showErrorWithStatus:@"数据文件写入失败"];
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (IBAction)completeEvent:(id)sender {
+    BOOL verification = true;
+    //遍历所有问题。判断问题选项有没有为空
+    for (NSArray *arr in photosData) {
+        if ([arr count] == 0) {
+            verification = false;
+        }
+    }
+    if (verification) {
+        NSDictionary *plistData = [NSMutableDictionary dictionaryWithContentsOfFile:storeData.plistPath];
+        [plistData setValue:[NSNumber numberWithBool:YES] forKey:@"isCheckPhotos"];
+        [plistData setValue:[NSNumber numberWithBool:true] forKey:@"IsError"];
+        if(!WRITE_PLISTDATA(plistData, storeData.plistPath)){
+            [ZAActivityBar showErrorWithStatus:@"数据文件写入失败"];
+        }else{
+            [self.navigationController popViewControllerAnimated:YES];
+        }
+    }else{
+        [ZAActivityBar showErrorWithStatus:@"请至少拍摄一张照片"];
+    }
+}
+
+
+-(void)openCamera:(NSInteger)num
+{
+    selectedCVNum = num;
+    UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera;
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];//初始化
+    picker.delegate = self;
+    picker.allowsEditing = NO;//设置可编辑
+    picker.sourceType = sourceType;
+    [self presentViewController:picker animated:YES completion:nil];//进入照相界面
+}
+
+#pragma mark - UIImagePickerControllerDelegate and UINavigationControllerDelegate
+-(void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
+{
+    
+    [picker dismissViewControllerAnimated:YES completion:^{
+        UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
+        UIImageWriteToSavedPhotosAlbum(image, self, @selector(saveSate:didFinishSavingWithError:contextInfo:), nil);
+        NSMutableArray *res = [photosData objectAtIndex:selectedCVNum];
+        UIImage *img = nil;
+        if (image.imageOrientation == UIImageOrientationRight) {
+            img = [self image:image rotation:UIImageOrientationRight];
+        }else if(image.imageOrientation == UIImageOrientationLeft){
+            img = [self image:image rotation:UIImageOrientationLeft];
+        }else if(image.imageOrientation == UIImageOrientationDown){
+            img = [self image:image rotation:UIImageOrientationDown];
+        }else{
+            img = image;
+        }
+        [res addObject:UIImageJPEGRepresentation(img, 0.1f)];
+        [self refreshCollectionView];
+    }];
+    
+}
+-(void)saveSate:(UIImage *)image didFinishSavingWithError: (NSError *) error contextInfo: (void *) contextInfo
+{
+    if (error) {
+        [ZAActivityBar showErrorWithStatus:@"签到照片保存到本地相册失败"];
+        return;
+    }
+    
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    
+    return [dataSource count];
+}
+
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return [dataSource objectAtIndex:section];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    
+    return 1;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 72;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    UITableViewCell *cell;
+    
+        cell = [tableView dequeueReusableCellWithIdentifier:@"TakePhotoCell"];
+
+        UICollectionView* myCollectionView = (UICollectionView*)[cell viewWithTag:1];
+        [myCollectionView setDelegate:[pDCVs objectAtIndex:indexPath.section]];
+        [myCollectionView setDataSource:[pDCVs objectAtIndex:indexPath.section]];
+    ((ProductsDetailsCollectionViewController*)[pDCVs objectAtIndex:indexPath.section]).cv = myCollectionView;
+    
+    
+    return cell;
+}
+
+
+-(void)deleteImage:(NSInteger)row withNum:(NSInteger)num
+{
+    selectedCVNum = num;
+    selectedPicNum = row;
+    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"" delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:@"删除该照片" otherButtonTitles:nil, nil];
+    [actionSheet showInView:self.navigationController.view];
+}
+
+#pragma mark -ActionSheetDelegate
+-(void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == 0) {
+        NSMutableArray *res = [photosData objectAtIndex:selectedCVNum];
+        [res removeObjectAtIndex:selectedPicNum];
+    }
+    [self refreshCollectionView];
+}
+
+-(void)refreshCollectionView
+{
+    for (ProductsDetailsCollectionViewController *p in pDCVs) {
+        [p refreshCollectionView];
+    }
+}
+
+- (UIImage *)image:(UIImage *)image rotation:(UIImageOrientation)orientation
+{
+    long double rotate = 0.0;
+    CGRect rect;
+    float translateX = 0;
+    float translateY = 0;
+    float scaleX = 1.0;
+    float scaleY = 1.0;
+    
+    switch (orientation) {
+        case UIImageOrientationLeft:
+            rotate = M_PI_2;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = 0;
+            translateY = -rect.size.width;
+            scaleY = rect.size.width/rect.size.height;
+            scaleX = rect.size.height/rect.size.width;
+            break;
+        case UIImageOrientationRight:
+            rotate = 3 * M_PI_2;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = -rect.size.height;
+            translateY = 0;
+            scaleY = rect.size.width/rect.size.height;
+            scaleX = rect.size.height/rect.size.width;
+            break;
+        case UIImageOrientationDown:
+            rotate = M_PI;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = -rect.size.width;
+            translateY = -rect.size.height;
+            break;
+        default:
+            rotate = 0.0;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = 0;
+            translateY = 0;
+            break;
+    }
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    //做CTM变换
+    CGContextTranslateCTM(context, 0.0, rect.size.height);
+    CGContextScaleCTM(context, 1.0, -1.0);
+    CGContextRotateCTM(context, rotate);
+    CGContextTranslateCTM(context, translateX, translateY);
+    
+    CGContextScaleCTM(context, scaleX, scaleY);
+    //绘制图片
+    CGContextDrawImage(context, CGRectMake(0, 0, rect.size.width, rect.size.height), image.CGImage);
+    
+    UIImage *newPic = UIGraphicsGetImageFromCurrentImageContext();
+    
+    return newPic;
+}
+
+@end

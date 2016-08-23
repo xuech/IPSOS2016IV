@@ -1,0 +1,34 @@
+//
+//  ShopTaskTableViewCell.h
+//  IPSOS
+//
+//  Created by 沈鹏 on 14-8-8.
+//  Copyright (c) 2014年 沈鹏. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@protocol  ShopTaskTableViewCellDelegate<NSObject>
+
+-(void)ShopTaskTableViewCellHaveEvent:(NSString*)productName andIndex:(NSIndexPath*)index;
+-(void)ShopTaskTableViewCellNoHaveEvent:(NSString*)productName;
+
+@end
+
+@interface ShopTaskTableViewCell : UITableViewCell
+
+@property (strong,nonatomic) NSString *productName;
+@property (nonatomic) BOOL isSelected;
+@property (nonatomic) BOOL isHave;
+
+@property (nonatomic,assign)NSIndexPath* indexOfCell;
+
+@property (weak,nonatomic) id<ShopTaskTableViewCellDelegate> delegate;
+@property (weak, nonatomic) IBOutlet UIButton *leftButtonTitle;
+@property (weak, nonatomic) IBOutlet UIButton *rightButtonTitle;
+@property (weak, nonatomic) IBOutlet UIImageView *imgView1;
+@property (weak, nonatomic) IBOutlet UIImageView *imgView2;
+
+@property (weak, nonatomic) IBOutlet UILabel *productLabel;
+@end
+

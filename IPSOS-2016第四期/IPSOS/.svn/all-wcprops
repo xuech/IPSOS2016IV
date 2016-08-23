@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/IPSOS/!svn/ver/237/trunk/source/ios/IPSOS/IPSOS
+END
+main.m
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/IPSOS/!svn/ver/17/trunk/source/ios/IPSOS/IPSOS/main.m
+END
+IPSOS-Info.plist
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/IPSOS/!svn/ver/283/trunk/source/ios/IPSOS/IPSOS/IPSOS-Info.plist
+END
+AppDelegate.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/IPSOS/!svn/ver/17/trunk/source/ios/IPSOS/IPSOS/AppDelegate.h
+END
+IPSOS-Prefix.pch
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/IPSOS/!svn/ver/75/trunk/source/ios/IPSOS/IPSOS/IPSOS-Prefix.pch
+END
+ViewController.h
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/IPSOS/!svn/ver/17/trunk/source/ios/IPSOS/IPSOS/ViewController.h
+END
+AppDelegate.m
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/IPSOS/!svn/ver/75/trunk/source/ios/IPSOS/IPSOS/AppDelegate.m
+END
+ViewController.m
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/IPSOS/!svn/ver/56/trunk/source/ios/IPSOS/IPSOS/ViewController.m
+END

@@ -1,0 +1,742 @@
+//
+//  ShopDetailsViewController.m
+//  IPSOS
+//
+//  Created by 沈鹏 on 14-7-25.
+//  Copyright (c) 2014年 沈鹏. All rights reserved.
+//
+
+#import "ShopDetailsViewController.h"
+#import <MapKit/MapKit.h>
+#import <CoreLocation/CoreLocation.h>
+#import "CustomAnnotation.h"
+
+@interface ShopDetailsViewController ()<UIImagePickerControllerDelegate,UINavigationControllerDelegate,FTPManagerDelegate,UIActionSheetDelegate,DataManagerDelegate,MKMapViewDelegate>
+{
+    BOOL isFirst;
+    StoreData *storeData;
+    CLLocation *userLocation;
+    NSMutableDictionary *plistData;
+    MBProgressHUD *hud;
+    Reachability *reachability;
+    
+    
+}
+@property (weak, nonatomic) IBOutlet UIView *contentView;
+@property (weak, nonatomic) IBOutlet MKMapView *mapView;
+
+@property (weak, nonatomic) IBOutlet UILabel *shopName;
+
+@property (weak, nonatomic) IBOutlet UILabel *contacts;
+@property (weak, nonatomic) IBOutlet UILabel *phone;
+
+@property (weak, nonatomic) IBOutlet UILabel *adress;
+
+
+@property (weak, nonatomic) IBOutlet UIImageView *signInYes;
+@property (weak, nonatomic) IBOutlet UIImageView *shopTaskYes;
+@property (weak, nonatomic) IBOutlet UIImageView *questionYes;
+@property (weak, nonatomic) IBOutlet UIImageView *recordYes;
+@property (weak, nonatomic) IBOutlet UIImageView *shopTask2Yes;
+@property (weak, nonatomic) IBOutlet UIImageView *photoYes;
+
+@property (weak, nonatomic) IBOutlet UIButton *completeButton;
+@property (weak, nonatomic) IBOutlet UIView *otherView;
+@property (weak, nonatomic) IBOutlet UIView *takePhotoView;
+
+@property (strong, nonatomic) DLSFTPConnection *connection;
+@property (nonatomic, strong) DLSFTPRequest *request;
+
+@end
+
+@implementation ShopDetailsViewController
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    isFirst = YES;
+    [self performSelector:@selector(showShopLocation) withObject:nil afterDelay:1];
+    //取得单例里面的数据
+    storeData = [[DataManager shareDataManager] storeData];
+    
+    [Flurry logEvent:storeData.storeName withParameters:[Context getSystemInfo]];
+    
+    _shopName.text = storeData.storeName;
+    _contacts.text = storeData.contact;
+    _phone.text = storeData.telephone;
+    _adress.text = storeData.address;
+    hud = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
+    [self.navigationController.view addSubview:hud];
+    
+    self.mapView.delegate = self;
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [_completeButton setAlpha:0.0f];
+//    [_completeButton setAlpha:1.0f];
+    self.title = @"店铺详情";
+
+    plistData = PLISTDATA(storeData.plistPath);
+
+    if ([[plistData valueForKey:@"isSignIn"] boolValue]) {
+        [_signInYes setHidden:NO];
+    }else{
+        [_signInYes setHidden:YES];
+    }
+    
+    if ([[plistData valueForKey:@"isTaskData"] boolValue]) {
+        [_shopTaskYes setHidden:NO];
+    }else{
+        [_shopTaskYes setHidden:YES];
+    }
+    
+    if ([[plistData valueForKey:@"isTaskData2"] boolValue]) {
+        [_shopTask2Yes setHidden:NO];
+    }else{
+        [_shopTask2Yes setHidden:YES];
+    }
+    
+    if ([[plistData valueForKey:@"isMData"] boolValue]) {
+        [_recordYes setHidden:NO];
+    }else{
+        [_recordYes setHidden:YES];
+    }
+    if ([[plistData valueForKey:@"isCheckPhotos"] boolValue]) {
+        [_photoYes setHidden:NO];
+    }else{
+        [_photoYes setHidden:YES];
+    }
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *recordPath = [NSString stringWithFormat:@"%@/audio.caf",storeData.storeIdPath];
+    if ([fileManager fileExistsAtPath:recordPath]) {
+        [_questionYes setHidden:NO];
+    }else{
+        [_questionYes setHidden:YES];
+        
+    }
+    
+    if([[[NSDictionary dictionaryWithContentsOfFile:storeData.plistPath] valueForKey:@"mData"] isKindOfClass:[NSString class]]){
+        return;
+    }
+    NSDictionary *mData = [[NSDictionary dictionaryWithContentsOfFile:storeData.plistPath] valueForKey:@"mData"];
+
+//    if ([[mData valueForKey:@"M3"] boolValue] || [[mData valueForKey:@"M4"] boolValue] || [[mData valueForKey:@"M5"] boolValue]) {
+//        [_otherView setHidden:NO];
+//    }else{
+//
+//        [_otherView setHidden:YES];
+//    }
+#warning 三期隐藏
+    [_otherView setHidden:YES];
+//    if ([[mData valueForKey:@"M3"] boolValue]) {
+//        [_otherView setHidden:NO];
+//    }else{
+//        
+//        [_otherView setHidden:YES];
+//    }
+    
+    storeData = [[DataManager shareDataManager] storeData];
+    QuestionsData* questionData = [[QuestionsData alloc] initWithPlistPath:storeData.plistPath];
+    
+    BOOL isAdd = false;
+    for (int i = 0; i<questionData.data.count; i++) {
+        NSDictionary *dic = [questionData.data objectAtIndex:i];
+        if (i<4) {
+            if ([[dic valueForKey:@"isHave"] boolValue]) {
+                isAdd = true;
+                break;
+            }
+        }
+        dic = [questionData.data objectAtIndex:i];
+        if (i==9) {
+            if ([[dic valueForKey:@"isHave"] boolValue]) {
+                isAdd = true;
+                break;
+            }
+        }
+    }
+
+//    NSMutableArray *taskData2 = [plistData valueForKey:@"taskData2"];
+//    
+//    NSArray *result = [[[[taskData2 objectAtIndex:0] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//    if (result.count>0) {
+//        if (![[result objectAtIndex:0] isEqualToString:@"以上暂无"]) {
+//            isAdd = true;
+//        }
+//    }
+//    result = [[[[taskData2 objectAtIndex:1] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//    if (result.count>0) {
+//        if (![[result objectAtIndex:0] isEqualToString:@"以上暂无"]) {
+//            isAdd = true;
+//        }
+//    }
+//    result = [[[[taskData2 objectAtIndex:2] valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//    if (result.count>0) {
+//        if (![[result objectAtIndex:0] isEqualToString:@"以上暂无"]) {
+//            isAdd = true;
+//        }
+//    }
+//    
+//    for (NSDictionary* dic in taskData2) {
+//        NSArray *result = [[[dic valueForKey:@"questions"] objectAtIndex:0] valueForKey:@"result"];
+//        
+//    }
+    
+//    [_takePhotoView setHidden:YES];
+//    if (![_shopTaskYes isHidden]) {
+//        [_takePhotoView setHidden:!isAdd];
+//    }
+}
+
+-(void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    [_completeButton setAlpha:0.0f];
+    self.title = @"";
+}
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    if (![_signInYes isHidden]&&![_questionYes isHidden]&&![_shopTaskYes isHidden]&&![_shopTask2Yes isHidden]) {
+        if (![_takePhotoView isHidden]&&![_photoYes isHidden]) {
+            if ([_otherView isHidden]) {
+                [self changeButtonLocation];
+            }else if(![_otherView isHidden] && ![_recordYes isHidden]){
+                [self changeButtonLocation];
+            }
+        }else if([_takePhotoView isHidden]&&[_photoYes isHidden]){
+            [self changeButtonLocation];
+        }
+        
+    }
+}
+
+-(void)mapView:(MKMapView *)mapView didUpdateUserLocation:(MKUserLocation *)userLocationn
+{
+    if([[[plistData objectForKey:@"signInLatLng"] valueForKey:@"lat"] integerValue] == 0 || [[[plistData objectForKey:@"signInLatLng"] valueForKey:@"lng"] integerValue] == 0) {
+       
+        if (userLocationn != nil){
+            //设置签到GPS位置
+            [plistData setValue:@{@"lat":[NSNumber numberWithDouble:userLocationn.coordinate.latitude],@"lng":[NSNumber numberWithDouble:userLocationn.coordinate.longitude]} forKey:@"signInLatLng"];
+            if(!WRITE_PLISTDATA(plistData, storeData.plistPath)){
+                [ZAActivityBar showErrorWithStatus:@"数据文件写入失败"];
+            }
+        }
+        
+    }
+    
+     NSLog(@"GPS位置%@",[plistData objectForKey:@"signInLatLng"]);
+}
+
+-(void)changeButtonLocation
+{
+    CGRect frame = [_completeButton frame];
+    CGRect frameRecord = [_otherView frame];
+    if ([_takePhotoView isHidden]) {
+        frame.origin.y -= [_takePhotoView frame].size.height;
+        frameRecord.origin.y -= [_takePhotoView frame].size.height;
+    }
+    if ([_otherView isHidden]) {
+        frame.origin.y -= [_otherView frame].size.height;
+    }
+    [_otherView setFrame:frameRecord];
+    [_completeButton setFrame:frame];
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationCurve:0.6f];
+    [_completeButton setAlpha:1.0f];
+    [UIView commitAnimations];
+}
+
+//定位店铺
+-(void)showShopLocation
+{
+    if ([storeData.address  isEqual: @""]) {
+        return;
+    }
+    CLGeocoder *geocoder = [[CLGeocoder alloc] init];
+    [geocoder geocodeAddressString:[NSString stringWithFormat:@"%@ %@",storeData.city,storeData.address] completionHandler:^(NSArray *placemarks, NSError *error) {
+        
+        CLLocation *l=((CLPlacemark*)[placemarks objectAtIndex:0]).location;
+        if (l == nil) {
+            [ZAActivityBar showErrorWithStatus:@"定位商铺失败"];
+            return;
+        }
+        CLLocationCoordinate2D coord2D = [l coordinate];
+        
+        MKCoordinateSpan span = {0.0015, 0.0015};
+        MKCoordinateRegion region = {coord2D,span};
+        CustomAnnotation *annotation = [[CustomAnnotation alloc] initWithCoordinate:
+                                        coord2D];
+        annotation.title = storeData.storeName;
+        annotation.subtitle = storeData.address;
+        [_mapView addAnnotation:annotation];
+        [_mapView setRegion:region animated:NO];
+    }];
+}
+
+//签到事件
+- (IBAction)signInEvent:(id)sender {
+    if (![_signInYes isHidden]) {
+        return;
+    }
+    userLocation = [_mapView userLocation].location;
+    UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera;
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];//初始化
+    picker.delegate = self;
+    picker.allowsEditing = NO;//设置可编辑
+    picker.sourceType = sourceType;
+
+    [self presentViewController:picker animated:YES completion:nil];//进入照相界面
+    [Flurry logEvent:@"签到" withParameters:[Context getSystemInfo]];
+//    _signInYes.hidden = NO;
+}
+
+//观察记录
+- (IBAction)shopTaskEvent:(id)sender {
+    if (![_shopTaskYes isHidden]) {
+        return;
+    }
+    if ([_signInYes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先签到"];
+        return;
+    }
+    [self performSegueWithIdentifier:@"ShopTask" sender:nil];
+    [Flurry logEvent:@"观察记录（产品陈列）" withParameters:[Context getSystemInfo]];
+}
+//观察记录2
+- (IBAction)shopTask2Event:(id)sender {
+    if (![_shopTask2Yes isHidden]) {
+        return;
+    }
+    if ([_signInYes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先签到"];
+        return;
+    }
+    if ([_shopTaskYes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先观察记录(产品陈列)"];
+        return;
+    }
+    [self performSegueWithIdentifier:@"ShopTask2" sender:nil];
+    [Flurry logEvent:@"观察记录（促销陈列形式）" withParameters:[Context getSystemInfo]];
+}
+
+//问卷调查
+- (IBAction)questionEvent:(id)sender {
+    if (![_questionYes isHidden]) {
+        //        [ZAActivityBar showErrorWithStatus:@"问卷调查已经完成且不可修改"];
+        return;
+    }
+    
+    if ([_signInYes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先签到"];
+        return;
+    }
+    if ([_shopTaskYes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先观察记录(产品陈列)"];
+        return;
+    }
+    if ([_shopTask2Yes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请先观察记录(促销陈列形式)"];
+        return;
+    }
+
+    [self performSegueWithIdentifier:@"Questionnaire" sender:nil];
+    [Flurry logEvent:@"问卷调查" withParameters:[Context getSystemInfo]];
+}
+
+//被访者原话记录
+- (IBAction)recordEvent:(id)sender {
+//    if (![_recordYes isHidden]) {
+//        return;
+//    }
+//    if ([_photoYes isHidden]&&![_takePhotoView isHidden]) {
+//        [ZAActivityBar showErrorWithStatus:@"请先拍照"];
+//        return;
+//    }
+    [self performSegueWithIdentifier:@"MView" sender:nil];
+    [Flurry logEvent:@"被访者原话记录" withParameters:[Context getSystemInfo]];
+}
+- (IBAction)takePhoto:(id)sender {
+//    if (![_photoYes isHidden]) {
+//        return;
+//    }
+//    if ([_shopTask2Yes isHidden]) {
+//        [ZAActivityBar showErrorWithStatus:@"请先观察记录(促销陈列形式)"];
+//        return;
+//    }
+//    if ([_questionYes isHidden]) {
+//        [ZAActivityBar showErrorWithStatus:@"请先问卷调查"];
+//        return;
+//    }
+  
+    [self performSegueWithIdentifier:@"takePhoto" sender:nil];
+    [Flurry logEvent:@"拍照" withParameters:[Context getSystemInfo]];
+}
+
+//完成事件
+- (IBAction)completeEvent:(id)sender {
+    //判断网络是否正常
+    if ([self isConnectionAvailable] == 0) {
+        hud.mode = MBProgressHUDModeText;
+        hud.labelText = @"网络异常";
+        [hud show:YES];
+        [hud hide:YES afterDelay:2];
+        return;
+    }
+    if ([self isConnectionAvailable] != 1) {
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"您当前不是wifi网络,可能会导致上传失败。" delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:@"上传" otherButtonTitles:nil, nil];
+        [actionSheet showInView:self.navigationController.view];
+        return;
+    }
+    /****************************/
+    //侦听网络
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(reachabilityChanged:)
+                                                 name: kReachabilityChangedNotification
+                                               object: nil];
+    reachability = [Reachability reachabilityWithHostName:@"www.apple.com"];
+    [reachability startNotifier];
+    
+    [plistData setValue:[NSNumber numberWithBool:false] forKey:@"IsError"];
+    if(!WRITE_PLISTDATA(plistData, storeData.plistPath)){
+        [ZAActivityBar showErrorWithStatus:@"数据文件写入失败"];
+    }
+    
+    [Flurry logEvent:@"上传开始" withParameters:[Context getSystemInfo]];
+    [self uploadZip];
+}
+
+//上传数据
+-(void)uploadZip
+{
+    [_completeButton setEnabled:NO];
+    //|| [_questionYes isHidden] || [_recordYes isHidden]
+    if ([_signInYes isHidden] || [_shopTaskYes isHidden] || [_questionYes isHidden] || [_shopTask2Yes isHidden]) {
+        [ZAActivityBar showErrorWithStatus:@"请确认所有任务已完成"];
+        [_completeButton setEnabled:YES];
+        return;
+    }
+    if (![_otherView isHidden]) {
+        if ([_recordYes isHidden]) {
+            [ZAActivityBar showErrorWithStatus:@"请确认所有任务已完成"];
+            [_completeButton setEnabled:YES];
+            return;
+        }
+    }
+//    [_completeButton setEnabled:YES];
+    NSStringEncoding gbkEncoding =CFStringConvertEncodingToNSStringEncoding(kCFStringEncodingGB_18030_2000);
+    
+    
+    NSString *documentPath = PATH_OF_DOCUMENT;
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSDirectoryEnumerator *filesList = [fileManager enumeratorAtPath:storeData.storeIdPath];
+    NSLog(@"%@===%@",documentPath,filesList);
+    //压缩文件
+    NSString *zipFile = [documentPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.zip",storeData.storeId]];
+    ZipArchive *zipArchive = [[ZipArchive alloc] init];
+    //必须转成gbk编码。不然windows下解压会乱码
+    [zipArchive setStringEncoding:gbkEncoding];
+    [zipArchive CreateZipFile2:zipFile];
+    
+    //遍历文件添加到压缩包里
+    NSString *filePath;
+    BOOL isDir;
+    while ((filePath = [filesList nextObject]) != nil) {
+        [fileManager fileExistsAtPath:[storeData.storeIdPath stringByAppendingPathComponent:filePath] isDirectory:&isDir];
+        if (!isDir) {
+            [zipArchive addFileToZip:[storeData.storeIdPath stringByAppendingPathComponent:filePath] newname:[[storeData.scheduleCategory stringByAppendingPathComponent:storeData.storeId] stringByAppendingPathComponent:filePath]];
+        }
+    }
+    if([zipArchive CloseZipFile2]){
+        [hud setMode:MBProgressHUDModeDeterminateHorizontalBar];
+        [hud setLabelText:@"正在连接服务器"];
+        [hud show:YES];
+        /*************************************************************************/
+        //使用DLSFTP
+        DLSFTPConnection *connection = [[DLSFTPConnection alloc] initWithHostname:FTP_SERVER
+                                                                             port:FTP_PORT
+                                                                         username:FTP_USERNAME
+                                                                    password:FTP_PASSWORD];
+        
+        self.connection = connection;
+        DLSFTPClientSuccessBlock successBlock = ^{
+            dispatch_async(dispatch_get_main_queue(), ^{
+//                NSLog(@"successful");
+                [hud setLabelText:@"正在上传数据"];
+                DLSFTPClientProgressBlock progressBlock = ^void(unsigned long long bytesSent, unsigned long long bytesTotal) {
+                    float progress = (float)bytesSent / (float)bytesTotal;
+                    dispatch_async(dispatch_get_main_queue(), ^{
+//                        NSLog(@"%f",progress);
+                        hud.progress = progress;
+                    });
+                };
+                
+                DLSFTPClientFileTransferSuccessBlock successBlock = ^(DLSFTPFile *file, NSDate *startTime, NSDate *finishTime) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSTimeInterval duration = round([finishTime timeIntervalSinceDate:startTime]);
+                        unsigned long long rate = (file.attributes.fileSize / duration);
+                       NSLog(@"%llu",rate);
+                        hud.labelText = @"上传成功";
+                        [hud hide:YES afterDelay:1];
+                        [_completeButton setEnabled:YES];
+                        [[NSNotificationCenter defaultCenter] removeObserver:self];
+                        [[DataManager shareDataManager] setDelegate:self];
+                        [[DataManager shareDataManager] postJson:storeData.plistPath];
+                        [fileManager removeItemAtPath:zipFile error:nil];
+                        [fileManager removeItemAtPath:storeData.storeIdPath error:nil];
+                    });
+                };
+                
+                DLSFTPClientFailureBlock failureBlock = ^(NSError *error) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+//                        NSLog(@"faile");
+                        hud.labelText = @"上传失败";
+                        [hud hide:YES afterDelay:1];
+                        [_completeButton setEnabled:YES];
+                        [[NSNotificationCenter defaultCenter] removeObserver:self];
+                    });
+                };
+                
+                self.request = [[DLSFTPUploadRequest alloc] initWithRemotePath:[NSString stringWithFormat:@"%@.zip",storeData.storeId]
+                                                                     localPath:zipFile
+                                                                  successBlock:successBlock
+                                                                  failureBlock:failureBlock
+                                                                 progressBlock:progressBlock];
+                
+                [self.connection submitRequest:self.request];
+            });
+        };
+        
+        DLSFTPClientFailureBlock failureBlock = ^(NSError *error){
+            dispatch_async(dispatch_get_main_queue(), ^{
+//                NSLog(@"faile");
+                hud.labelText = @"服务器连接失败";
+                [hud hide:YES afterDelay:1];
+                [_completeButton setEnabled:YES];
+                [[NSNotificationCenter defaultCenter] removeObserver:self];
+            });
+        };
+        
+        [connection connectWithSuccessBlock:successBlock
+                               failureBlock:failureBlock];
+
+        return;
+        /*************************************************************************/
+        //使用ftpManager上传数据,不支持断点续传
+        FMServer *server = [FMServer new];
+        server.port = 22;
+        [server setDestination:FTP_SERVER];
+        [server setUsername:FTP_USERNAME];
+        [server setPassword:FTP_PASSWORD];
+        
+        FTPManager *ftpManager = [FTPManager new];
+        [ftpManager setDelegate:self];
+        
+        [hud showAnimated:YES whileExecutingBlock:^{
+            [ftpManager deleteFileNamed:[NSString stringWithFormat:@"%@.zip",storeData.storeId] fromServer:server];
+            [ftpManager uploadFile:[NSURL fileURLWithPath:zipFile] toServer:server];
+            if (hud.progress < 1) {
+                hud.labelText = @"上传失败";
+            }
+            sleep(1);
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                [_completeButton setEnabled:YES];
+            });
+        }];
+        
+    }else{
+        [ZAActivityBar showErrorWithStatus:@"文件压缩失败，上传中止"];
+    }
+
+}
+
+-(NSInteger) isConnectionAvailable{
+    
+    int existenceNetwork = 0;
+    Reachability *reach = [Reachability reachabilityWithHostName:@"www.apple.com"];
+    switch ([reach currentReachabilityStatus]) {
+        case NotReachable:
+            existenceNetwork = 0;
+            //NSLog(@"notReachable");
+            break;
+        case ReachableViaWiFi:
+            existenceNetwork = 1;
+            //NSLog(@"WIFI");
+            break;
+        case ReachableViaWWAN:
+            existenceNetwork = 2;
+            //NSLog(@"3G");
+            break;
+    }
+    
+    return existenceNetwork;
+}
+
+//网络改变时执行
+- (void)reachabilityChanged:(NSNotification *)note {
+    Reachability* curReach = [note object];
+    NSParameterAssert([curReach isKindOfClass: [Reachability class]]);
+    NetworkStatus status = [curReach currentReachabilityStatus];
+    
+    if (status == NotReachable) {
+        hud.labelText = @"上传失败";
+        [hud hide:YES afterDelay:1];
+        [_completeButton setEnabled:YES];
+        [self.connection cancelAllRequests];
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
+    }
+}
+
+#pragma mark - DataManagerDelegate
+-(void)postJsonSuccess
+{
+//    [[DataManager shareDataManager] shopChecked:storeData.storeId withUserId:UID];
+    [hud hide:YES];
+    [self.navigationController popViewControllerAnimated:YES];
+    [Flurry logEvent:@"上传完成" withParameters:[Context getSystemInfo]];
+}
+
+-(void)postJsonFaile:(NSError *)error
+{
+    [ZAActivityBar showErrorWithStatus:@"店铺店检失败，请尝试重新提交"];
+}
+
+#pragma mark - UIActionSheetDelegate
+-(void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == 0) {
+        [self uploadZip];
+    }
+}
+
+#pragma mark -FTPManagerDelegate
+-(void)ftpManagerUploadProgressDidChange:(NSDictionary *)processInfo
+{
+    hud.progress = [[processInfo valueForKey:@"progress"] doubleValue];
+    if(hud.progress >= 1)
+    {
+        hud.labelText = @"上传成功";
+    }
+}
+
+#pragma mark - UIImagePickerControllerDelegate and UINavigationControllerDelegate
+-(void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
+{
+    [picker dismissViewControllerAnimated:YES completion:^{
+        UIImage *image = [info valueForKey:UIImagePickerControllerOriginalImage];
+        UIImageWriteToSavedPhotosAlbum(image, self, @selector(saveSate:didFinishSavingWithError:contextInfo:), nil);
+        UIImage *img = nil;
+        if (image.imageOrientation == UIImageOrientationRight) {
+            img = [self image:image rotation:UIImageOrientationRight];
+        }else if(image.imageOrientation == UIImageOrientationLeft){
+            img = [self image:image rotation:UIImageOrientationLeft];
+        }else if(image.imageOrientation == UIImageOrientationDown){
+            img = [self image:image rotation:UIImageOrientationDown];
+        }else{
+            img = image;
+        }
+        NSData *dataObj = UIImageJPEGRepresentation(img, 0.1f);
+//        UIImageJPEGRepresentation(image, 0.1f);
+       
+        if([dataObj writeToFile:[NSString stringWithFormat:@"%@/sign.jpeg",storeData.storeIdPath] atomically:YES]){
+            //设置签到GPS位置
+            if (userLocation != nil) {
+                [plistData setValue:@{@"lat":[NSNumber numberWithDouble:userLocation.coordinate.latitude],@"lng":[NSNumber numberWithDouble:userLocation.coordinate.longitude]} forKey:@"signInLatLng"];
+                
+            }
+            //设置是否已经签到
+            [plistData setValue:[NSNumber numberWithBool:true] forKey:@"isSignIn"];
+            //设置签到日期
+            [plistData setValue:[[NSDate date] description] forKey:@"signInDate"];
+            
+            if(!WRITE_PLISTDATA(plistData, storeData.plistPath)){
+                [ZAActivityBar showErrorWithStatus:@"数据文件写入失败"];
+            }else{
+                [_signInYes setHidden:NO];
+            }
+            
+        }else{
+            [ZAActivityBar showErrorWithStatus:@"签到失败"];
+        }
+    }];
+    
+}
+
+-(void)saveSate:(UIImage *)image didFinishSavingWithError: (NSError *) error contextInfo: (void *) contextInfo
+{
+    if (error) {
+        [ZAActivityBar showErrorWithStatus:@"签到照片保存到本地相册失败"];
+        return;
+    }
+    
+}
+
+- (UIImage *)image:(UIImage *)image rotation:(UIImageOrientation)orientation
+{
+    long double rotate = 0.0;
+    CGRect rect;
+    float translateX = 0;
+    float translateY = 0;
+    float scaleX = 1.0;
+    float scaleY = 1.0;
+    
+    switch (orientation) {
+        case UIImageOrientationLeft:
+            rotate = M_PI_2;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = 0;
+            translateY = -rect.size.width;
+            scaleY = rect.size.width/rect.size.height;
+            scaleX = rect.size.height/rect.size.width;
+            break;
+        case UIImageOrientationRight:
+            rotate = 3 * M_PI_2;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = -rect.size.height;
+            translateY = 0;
+            scaleY = rect.size.width/rect.size.height;
+            scaleX = rect.size.height/rect.size.width;
+            break;
+        case UIImageOrientationDown:
+            rotate = M_PI;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = -rect.size.width;
+            translateY = -rect.size.height;
+            break;
+        default:
+            rotate = 0.0;
+            rect = CGRectMake(0, 0, image.size.width, image.size.height);
+            translateX = 0;
+            translateY = 0;
+            break;
+    }
+    
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    //做CTM变换
+    CGContextTranslateCTM(context, 0.0, rect.size.height);
+    CGContextScaleCTM(context, 1.0, -1.0);
+    CGContextRotateCTM(context, rotate);
+    CGContextTranslateCTM(context, translateX, translateY);
+    
+    CGContextScaleCTM(context, scaleX, scaleY);
+    //绘制图片
+    CGContextDrawImage(context, CGRectMake(0, 0, rect.size.width, rect.size.height), image.CGImage);
+    
+    UIImage *newPic = UIGraphicsGetImageFromCurrentImageContext();
+    
+    return newPic;
+}
+
+@end
